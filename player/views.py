@@ -9,5 +9,6 @@ def index(request):
     cast = next(cc for cc in chromecasts if cc.device.friendly_name == target)
     context = {}
     context["device"] = str(cast.device)
-    print(str(context))
+    mc = cast.media_controller
+    mc.play_media("http://www.hochmuth.com/mp3/Bloch_Prayer.mp3","audio/mp3")
     return AdministrationUtils.render(request,'player/index.html',context)
