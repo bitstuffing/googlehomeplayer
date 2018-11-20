@@ -1,9 +1,7 @@
 from django.shortcuts import render
 
-# Create your views here.
-from django.http import HttpResponse
-
+from utils.administrationUtils import AdministrationUtils
 
 def index(request):
-    return HttpResponse("Hello, I'm the player")
-
+    context = {}
+    return AdministrationUtils.render(request,'player/index.html',context)
