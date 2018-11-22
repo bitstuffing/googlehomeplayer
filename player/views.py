@@ -4,6 +4,7 @@ from utils.administrationUtils import AdministrationUtils
 
 import pychromecast
 import json
+import base64
 
 def index(request):
     context = {}
@@ -28,8 +29,10 @@ def play(request,url):
     target = request.session["device"]
     cast = next(cc for cc in chromecasts if cc.device.friendly_name == target)
     mc = cast.media_controller
-    finalUrl = base64.decodestring(url)
+    print("url: "+str(url))
+    finalUrl = base64.b64decode(url).decode("utf-8")
     mc.play_media(finalUrl,"audio/mp3")
+    mc.play()
     data = {}
-    data["url"] = url
-    return AdministrationUtils.jsonResponse(data)
+    data["url"] = str(finalUrl)
+    return AdministrationUtils.httpResponse(json.dumps(data))
