@@ -3,8 +3,8 @@
 	{% include "player/head.html" %}
   <body>
 
-		<div class="up-header">
-			<img class="right icon background-chromecast" />
+		<div class="up-header" >
+			<img id="selectDevice" class="right icon background-chromecast"  data-balloon="Select Device" data-balloon-pos="left" />
 		</div>
 		<div class="page-header " >
 			{% include "player/player.html" %}
@@ -22,7 +22,7 @@
 
 		<footer class="footer">
 		  <div class="container">
-			<p class="text-muted">
+			<p class="text-muted" id="status">
 				{% block content %}
 				{% endblock %}
 			</p>
