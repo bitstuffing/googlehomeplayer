@@ -2,7 +2,31 @@
 <html lang="es">
 	{% include "player/head.html" %}
   <body>
-    {% block content %}
-    {% endblock %}
+
+		<div class="up-header">
+			<img class="right icon background-chromecast" />
+		</div>
+		<div class="page-header " >
+			{% include "player/player.html" %}
+		</div>
+		<div class="container">
+			<div class="input-group input-group-sm mb-3">
+			  <div class="input-group-prepend">
+				<span class="input-group-text" id="inputGroup-sizing-sm">Send link to playlist</span>
+			  </div>
+			  <input type="text" class="form-control" aria-label="Small" aria-describedby="inputGroup-sizing-sm">
+
+			</div>
+			{% include "player/playlist.html" %}
+		</div>
+
+		<footer class="footer">
+		  <div class="container">
+			<p class="text-muted">
+				{% block content %}
+				{% endblock %}
+			</p>
+		  </div>
+		</footer>
   </body>
 </html>

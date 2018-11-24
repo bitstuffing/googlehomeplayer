@@ -1,3 +1,85 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+.up-header{
+	background-color: #909090;
+	float:left;
+	width:100%;
+	z-index: -1;
+}
+
+.left{
+	float:left;
+}
+.right{
+	float:right;
+}
+.background-chromecast{
+	background-image: url("chromecast.ico");
+	background-repeat: no-repeat;
+    background-size: 48px 48px;
+}
+.background-chromecast:hover{
+	opacity: 0.8;
+	cursor: pointer;
+	background-color: #A0A0A0;
+}
+.background-chromecast:active{
+	opacity: 0.9;
+	cursor: pointer;
+}
+.icon{
+	width: 48px;
+	height: 48px;
+}
+
+/* Sticky footer styles
+-------------------------------------------------- */
+html {
+  position: relative;
+  min-height: 100%;
+}
 body {
-    background: white;
+  /* Margin bottom by footer height */
+  margin-bottom: 60px;
+}
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  /* Set the fixed height of the footer here */
+  height: 60px;
+  background-color: #f5f5f5;
+}
+
+
+/* Custom page CSS
+-------------------------------------------------- */
+
+.container {
+  width: auto;
+  max-width: 680px;
+}
+.container .text-muted {
+  margin: 0px;
+  padding-top: 20px;
+}
+
+.progress {
+	display: -ms-flexbox;
+	display: flex;
+	height: 1rem;
+	overflow: hidden;
+	font-size: .75rem;
+	background-color: #e9ecef;
+	border-radius: .25rem;
+}
+
+.bd-group-controls {
+
+	padding: 1rem;
+	padding: 1rem -15px 0;
+	border: solid #f8f9fa;
+	border-width: .2rem 0 0;
 }
