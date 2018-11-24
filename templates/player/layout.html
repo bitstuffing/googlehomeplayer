@@ -4,17 +4,18 @@
   <body>
 
 		<div class="up-header" >
-			<img id="selectDevice" class="right icon background-chromecast"  data-balloon="Select Device" data-balloon-pos="left" />
+			<img id="selectDevice" class="right icon background-chromecast"  data-balloon="Select Device" data-balloon-pos="left"  data-toggle="modal" data-target="#modalDevice" />
 		</div>
 		<div class="page-header " >
 			{% include "player/player.html" %}
 		</div>
+		<input type="hidden" id="selectedDevice" >
 		<div class="container">
 			<div class="input-group input-group-sm mb-3">
 			  <div class="input-group-prepend">
-				<span class="input-group-text" id="inputGroup-sizing-sm">Send link to playlist</span>
+				<span class="input-group-text" id="inputGroup-sizing-sm">Link</span>
 			  </div>
-			  <input type="text" class="form-control" aria-label="Small" aria-describedby="inputGroup-sizing-sm">
+			  <input id="inputLink" type="text" class="form-control" aria-label="Small" aria-describedby="inputGroup-sizing-sm">
 
 			</div>
 			{% include "player/playlist.html" %}
@@ -28,5 +29,6 @@
 			</p>
 		  </div>
 		</footer>
+		 {% include "player/modals.html" %}
   </body>
 </html>
