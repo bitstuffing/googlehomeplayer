@@ -17,7 +17,7 @@ To install dependencies use pip:
 
 First time, like any other django app needs some `synchronization` with internal model, to make it simply launch:
 
-`python3 manage.py makemigrations
-python3 manage.py migrate`
+`python3 manage.py makemigrations`
+`python3 manage.py migrate`
 
 This proyect probably will be growing supporting more pages and functionalities, but you can just tests current functionalities working fine.
