@@ -11,4 +11,5 @@ urlpatterns = [
     url('^stop/', views.stop, name='stop'),
     url('^pause/', views.stop, name='pause'),
     url('^volume/', views.volume, name='volume'),
+    url('^track/', views.track, name='track'),
 ]

@@ -91,6 +91,18 @@ def volume(request):
     cast.wait()
     return AdministrationUtils.httpResponse(str(cast))
 
+def track(request):
+    cast = getCast(request)
+    cast.wait()
+    mc = cast.media_controller
+    mc.block_until_active()
+    if "back" in request.POST and request.POST.get("back") == "true":
+        pass
+    elif "forward" in request.POST and request.POST.get("forward") == "true":
+        pass
+    return AdministrationUtils.httpResponse(str(str(mc.status)))
+
+
 
 def getCast(request):
     friendly_name = request.session["friendly_name"]
