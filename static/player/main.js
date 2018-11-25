@@ -1,6 +1,22 @@
 
 $(document).ready(function(){
 
+  $("#volumeUp").click(function(){
+    $.post("/volume/",{
+      "up" : "true"
+    },function(){
+      $("#status").text("volume up!");
+    });
+  });
+
+  $("#volumeDown").click(function(){
+    $.post("/volume/",{
+      "up" : "false"
+    },function(){
+      $("#status").text("volume down!");
+    });
+  });
+
   $("#buttonLink").click(function(){
     var link = $("#inputLink").val();
     var encodedLink = encodeURI(btoa(link))

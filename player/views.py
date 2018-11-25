@@ -47,6 +47,7 @@ def play(request):
         print(str(ex))
         playerUrl = finalUrl
         pass
+    print(playerUrl)
     mc.play_media(playerUrl,"audio/mp3")
     data = {}
     data["playing"] = str(finalUrl)
@@ -74,6 +75,22 @@ def pause(request):
     data = {}
     data["pause"] = status
     return AdministrationUtils.jsonResponse(data)
+
+def volume(request):
+    cast = getCast(request)
+    cast.wait()
+    status = cast.status
+    vol = status.volume_level
+    up = False
+    if "up" in request.POST and request.POST.get("up") == "true":
+        vol = vol+0.1
+    else:
+        vol = vol-0.1
+    #status.volume_level = vol
+    cast.set_volume(vol)
+    cast.wait()
+    return AdministrationUtils.httpResponse(str(cast))
+
 
 def getCast(request):
     friendly_name = request.session["friendly_name"]
