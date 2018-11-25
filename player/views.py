@@ -7,6 +7,8 @@ from pychromecast import Chromecast, DeviceStatus, CAST_TYPES, CAST_TYPE_CHROMEC
 import json
 import base64
 
+from utils.decoder import decodeUrl
+
 MESSAGE_TYPE = 'type'
 TYPE_PAUSE = "PAUSE"
 
@@ -34,11 +36,18 @@ def get_devices(request):
     elements = json.dumps(devices)
     return AdministrationUtils.httpResponse(elements)
 
-def play(request,url):
+def play(request):
+    url = request.POST.get("url")
     cast = getCast(request)
     mc = cast.media_controller
     finalUrl = base64.b64decode(url).decode("utf-8")
-    mc.play_media(finalUrl,"audio/mp3")
+    try:
+        playerUrl = decodeUrl(finalUrl)
+    except Exception as ex:
+        print(str(ex))
+        playerUrl = finalUrl
+        pass
+    mc.play_media(playerUrl,"audio/mp3")
     data = {}
     data["playing"] = str(finalUrl)
     return AdministrationUtils.httpResponse(json.dumps(data))

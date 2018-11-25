@@ -1,10 +1,10 @@
 
 $(document).ready(function(){
 
-  $("#inputLink").click(function(){
-    var link = $(this).val();
-    var encodedLink = encodeURI(btoa(link));
-    $.get("/play/"+encodedLink+"/",function(r){console.log(r)});
+  $("#buttonLink").click(function(){
+    var link = $("#inputLink").val();
+    var encodedLink = encodeURI(btoa(link))
+    $.post("/play/",{"url":encodedLink},function(r){console.log(r)});
   });
 
   $("#stopIcon").click(function(){
