@@ -48,19 +48,16 @@ def play(request):
         cast.register_handler(yt)
         finalUrl = finalUrl[finalUrl.rfind("=")+1:]
         yt.play_video(finalUrl)
-        print(finalUrl)
     else:
         mc = cast.media_controller
         if "video" in request.POST and request.POST.get("video"):
             audio = False
-        print(str(audio))
         try:
             playerUrl = decodeUrl(finalUrl,audio)
         except Exception as ex:
             print(str(ex))
             playerUrl = finalUrl
             pass
-        print(playerUrl)
         format = "video"
         if audio:
             format = "audio"
