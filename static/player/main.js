@@ -20,7 +20,11 @@ $(document).ready(function(){
   $("#buttonLink").click(function(){
     var link = $("#inputLink").val();
     var encodedLink = encodeURI(btoa(link))
-    $.post("/play/",{"url":encodedLink},function(r){console.log(r)});
+    var data = {"url":encodedLink};
+    if($("#videoLink").is(':checked')){
+      data = {"url":encodedLink,"video":"true"};
+    }
+    $.post("/play/",data,function(r){console.log(r)});
   });
 
   $("#stopIcon").click(function(){

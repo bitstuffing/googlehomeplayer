@@ -38,17 +38,33 @@ def get_devices(request):
 
 def play(request):
     url = request.POST.get("url")
+    audio = True
     cast = getCast(request)
-    mc = cast.media_controller
     finalUrl = base64.b64decode(url).decode("utf-8")
-    try:
-        playerUrl = decodeUrl(finalUrl)
-    except Exception as ex:
-        print(str(ex))
-        playerUrl = finalUrl
-        pass
-    print(playerUrl)
-    mc.play_media(playerUrl,"audio/mp3")
+    if "youtube." in finalUrl and "video" in request.POST and request.POST.get("video"):
+        audio = False
+        from pychromecast.controllers.youtube import YouTubeController
+        yt = YouTubeController()
+        cast.register_handler(yt)
+        finalUrl = finalUrl[finalUrl.rfind("=")+1:]
+        yt.play_video(finalUrl)
+        print(finalUrl)
+    else:
+        mc = cast.media_controller
+        if "video" in request.POST and request.POST.get("video"):
+            audio = False
+        print(str(audio))
+        try:
+            playerUrl = decodeUrl(finalUrl,audio)
+        except Exception as ex:
+            print(str(ex))
+            playerUrl = finalUrl
+            pass
+        print(playerUrl)
+        format = "video"
+        if audio:
+            format = "audio"
+        mc.play_media(playerUrl,format)
     data = {}
     data["playing"] = str(finalUrl)
     return AdministrationUtils.httpResponse(json.dumps(data))
