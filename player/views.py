@@ -9,23 +9,39 @@ import base64
 
 from utils.decoder import decodeUrl
 
+from player.models import Device
+
 MESSAGE_TYPE = 'type'
 TYPE_PAUSE = "PAUSE"
 
 def index(request):
-    context = {}
+    context = { }
+    if Device.objects.count():
+        device = Device.objects.latest("id")
+        id = device.id
+        name = device.friendly_name
+        context["id"] = id
+        context["name"] = name
     return AdministrationUtils.render(request,'player/index.html',context)
 
 def select_device(request,target):
     chromecasts = pychromecast.get_chromecasts()
     cast = next(cc for cc in chromecasts if cc.device.friendly_name == target)
-    request.session["ip_address"] = cast.host
-    request.session["port"] = cast.port
-    request.session["friendly_name"] = target
-    request.session["model_name"] = cast.model_name
-    request.session["uuid"] = str(cast.uuid)
+    #request.session["ip_address"] = cast.host
+    #request.session["port"] = cast.port
+    #request.session["friendly_name"] = target
+    #request.session["model_name"] = cast.model_name
+    #request.session["uuid"] = str(cast.uuid)
+    device = Device()
+    device.ip_address = cast.host
+    device.port = cast.port
+    device.friendly_name = target
+    device.model_name = cast.model_name
+    device.uuid = str(cast.uuid)
+    device.save()
     data = {}
     data["target"] = target
+    data["id"] = device.id
     return AdministrationUtils.jsonResponse(data)
 
 def get_devices(request):
@@ -39,7 +55,7 @@ def get_devices(request):
 def play(request):
     url = request.POST.get("url")
     audio = True
-    cast = getCast(request)
+    cast = getStoredCast(request)
     finalUrl = base64.b64decode(url).decode("utf-8")
     if "youtube." in finalUrl and "video" in request.POST and request.POST.get("video"):
         audio = False
@@ -67,7 +83,7 @@ def play(request):
     return AdministrationUtils.httpResponse(json.dumps(data))
 
 def stop(request):
-    cast = getCast(request)
+    cast = getStoredCast(request)
     mc = cast.media_controller
     mc.block_until_active()
     mc.stop()
@@ -76,7 +92,7 @@ def stop(request):
     return AdministrationUtils.jsonResponse(data)
 
 def pause(request):
-    cast = getCast(request)
+    cast = getStoredCast(request)
     mc = cast.media_controller
     mc.block_until_active(timeout=2)
     status = "true"
@@ -90,7 +106,7 @@ def pause(request):
     return AdministrationUtils.jsonResponse(data)
 
 def volume(request):
-    cast = getCast(request)
+    cast = getStoredCast(request)
     cast.wait()
     status = cast.status
     vol = status.volume_level
@@ -105,7 +121,7 @@ def volume(request):
     return AdministrationUtils.httpResponse(str(cast))
 
 def track(request):
-    cast = getCast(request)
+    cast = getStoredCast(request)
     cast.wait()
     mc = cast.media_controller
     mc.block_until_active()
@@ -114,8 +130,6 @@ def track(request):
     elif "forward" in request.POST and request.POST.get("forward") == "true":
         pass
     return AdministrationUtils.httpResponse(str(str(mc.status)))
-
-
 
 def getCast(request):
     friendly_name = request.session["friendly_name"]
@@ -129,4 +143,19 @@ def getCast(request):
         manufacturer=None, uuid=uuid, cast_type=cast_type
     )
     cast = Chromecast(host=ip_address, port=port, device=device)
+    return cast
+
+def getStoredCast(request):
+    device = Device.objects.get(id=int(request.POST.get("id")))
+    friendly_name = device.friendly_name
+    model_name = device.model_name
+    uuid = device.uuid
+    ip_address = device.ip_address
+    port = device.port
+    cast_type = CAST_TYPES.get(model_name.lower(), CAST_TYPE_CHROMECAST)
+    device = DeviceStatus(
+        friendly_name=friendly_name, model_name=model_name,
+        manufacturer=None, uuid=uuid, cast_type=cast_type
+    )
+    cast = Chromecast(host=ip_address, port=int(port), device=device)
     return cast
