@@ -7,7 +7,13 @@ function refresh(){
     percent = Math.floor(parseFloat(time / total) * 100)
     //console.log(time)
     minutes = parseInt(time/60);
+    if(minutes > 60){
+      //TODO with config
+    }
     seconds = time%60;
+    if(seconds < 10){
+      seconds = "0"+seconds;
+    }
     $("#trackTime").text(minutes+":"+seconds);
     percent = percent+"%";
     //console.log(percent)
