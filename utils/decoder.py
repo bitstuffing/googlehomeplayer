@@ -45,7 +45,6 @@ def decodeUrl(url,audio=True):
                 video = url
                 filesize = 0
                 try:
-                    print("hello!")
                     for target in result['formats']:
                         if audio:
                             if "acodec" in target and target["acodec"] == "opus" and filesize < int(target["filesize"]):

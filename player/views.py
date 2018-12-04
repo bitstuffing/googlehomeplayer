@@ -32,6 +32,7 @@ def select_device(request,target):
     #request.session["friendly_name"] = target
     #request.session["model_name"] = cast.model_name
     #request.session["uuid"] = str(cast.uuid)
+    Device.objects.all().delete()
     device = Device()
     device.ip_address = cast.host
     device.port = cast.port
@@ -57,7 +58,9 @@ def play(request):
     audio = True
     cast = getStoredCast(request)
     finalUrl = base64.b64decode(url).decode("utf-8")
-    if "youtube." in finalUrl and "video" in request.POST and request.POST.get("video"):
+    data = {}
+    data["playing"] = str(finalUrl)
+    if ("youtube." in finalUrl or "youtu." in finalUrl ) and "video" in request.POST and request.POST.get("video") == "true":
         audio = False
         from pychromecast.controllers.youtube import YouTubeController
         yt = YouTubeController()
@@ -66,10 +69,11 @@ def play(request):
         yt.play_video(finalUrl)
     else:
         mc = cast.media_controller
-        if "video" in request.POST and request.POST.get("video"):
+        if "video" in request.POST and request.POST.get("video") is "false":
             audio = False
         try:
             playerUrl = decodeUrl(finalUrl,audio)
+            data["decoded"] = playerUrl
         except Exception as ex:
             print(str(ex))
             playerUrl = finalUrl
@@ -78,8 +82,6 @@ def play(request):
         if audio:
             format = "audio"
         mc.play_media(playerUrl,format)
-    data = {}
-    data["playing"] = str(finalUrl)
     return AdministrationUtils.httpResponse(json.dumps(data))
 
 def stop(request):

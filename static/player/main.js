@@ -56,6 +56,7 @@ $(document).ready(function(){
           $("#status").text("Select one device");
           $("#inputSelectDevice").removeAttr("disabled");
           $("#loadingSpin").hide();
+          $("#inputSelectDevice").empty();
           $("#inputSelectDevice").show();
           $.each(response,function(i,value){
               var option = "<option value='"+value+"'>"+value+"</option>";
@@ -68,8 +69,9 @@ $(document).ready(function(){
               $("#modalDevice .close").click();
               $.get("/device/"+value+"/",function(r){
                   console.log(r);
+                  $("#selectedId").remove();
                   $("body").append("<input type='hidden' id='selectedId' value='"+r.id+"' />");
-                  $("#inputSelectDevice").find("option").remove();
+                  $("#inputSelectDevice").empty();
               });
               $("#status").text("Selected: "+$("#selectedDevice").val());
           });
