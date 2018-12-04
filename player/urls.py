@@ -9,7 +9,7 @@ urlpatterns = [
     url('^device/(\w+)/$', views.select_device, name='select_device'),
     url('^play/', views.play, name='play'),
     url('^stop/', views.stop, name='stop'),
-    url('^pause/', views.stop, name='pause'),
+    url('^pause/', views.pause, name='pause'),
     url('^volume/', views.volume, name='volume'),
     url('^track/', views.track, name='track'),
 ]

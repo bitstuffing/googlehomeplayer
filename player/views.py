@@ -6,6 +6,7 @@ import pychromecast
 from pychromecast import Chromecast, DeviceStatus, CAST_TYPES, CAST_TYPE_CHROMECAST
 import json
 import base64
+import time
 
 from utils.decoder import decodeUrl
 
@@ -13,6 +14,7 @@ from player.models import Device
 
 MESSAGE_TYPE = 'type'
 TYPE_PAUSE = "PAUSE"
+REFRESH_TIME = 0.3
 
 def index(request):
     context = { }
@@ -85,20 +87,24 @@ def play(request):
     return AdministrationUtils.httpResponse(json.dumps(data))
 
 def stop(request):
-    cast = getStoredCast(request)
-    mc = cast.media_controller
-    mc.block_until_active()
+    storedCast = getStoredCast(request)
+    storedCast.wait()
+    mc = storedCast.media_controller
+    time.sleep(REFRESH_TIME)
+    print(str(mc.status.player_state))
     mc.stop()
     data = {}
     data["stop"] = "true"
     return AdministrationUtils.jsonResponse(data)
 
 def pause(request):
-    cast = getStoredCast(request)
-    mc = cast.media_controller
-    mc.block_until_active(timeout=2)
+    storedCast = getStoredCast(request)
+    storedCast.wait()
+    mc = storedCast.media_controller
+    time.sleep(REFRESH_TIME)
+    print(str(mc.status.player_state))
     status = "true"
-    if mc.player_state == MEDIA_PLAYER_STATE_PLAYING:
+    if mc.status.player_state == "PLAYING":
         mc.pause()
     else:
         status = "false"
@@ -123,15 +129,17 @@ def volume(request):
     return AdministrationUtils.httpResponse(str(cast))
 
 def track(request):
-    cast = getStoredCast(request)
-    cast.wait()
-    mc = cast.media_controller
-    mc.block_until_active()
-    if "back" in request.POST and request.POST.get("back") == "true":
-        pass
-    elif "forward" in request.POST and request.POST.get("forward") == "true":
-        pass
-    return AdministrationUtils.httpResponse(str(str(mc.status)))
+    storedCast = getStoredCast(request)
+    mc = storedCast.media_controller
+    time.sleep(REFRESH_TIME)
+    status = {}
+    status["duration"] = mc.status.duration
+    status["current"] = mc.status.current_time
+    status["state"] = mc.status.player_state
+    status["volume"] = storedCast.status.volume_level
+    status["content"] = mc.status.content_id
+    status["app"] = storedCast.status.display_name
+    return AdministrationUtils.httpResponse(str(status))
 
 def getCast(request):
     friendly_name = request.session["friendly_name"]
@@ -148,7 +156,12 @@ def getCast(request):
     return cast
 
 def getStoredCast(request):
-    device = Device.objects.get(id=int(request.POST.get("id")))
+    try:
+        integerId = int(request.POST.get("id"))
+        device = Device.objects.get(id=integerId)
+    except:
+        device = Device.objects.latest('id')
+        pass
     friendly_name = device.friendly_name
     model_name = device.model_name
     uuid = device.uuid
