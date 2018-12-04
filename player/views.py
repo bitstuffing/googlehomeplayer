@@ -86,12 +86,24 @@ def play(request):
         mc.play_media(playerUrl,format)
     return AdministrationUtils.httpResponse(json.dumps(data))
 
+def seek(request):
+    storedCast = getStoredCast(request)
+    storedCast.wait()
+    mc = storedCast.media_controller
+    time.sleep(REFRESH_TIME)
+    data = {}
+    data["seek"] = "false"
+    if "seek" in request.POST:
+        seekValue = request.POST.get("seek")
+        mc.seek(seekValue)
+        data["seek"] = str(seekValue)
+    return AdministrationUtils.jsonResponse(data)
+
 def stop(request):
     storedCast = getStoredCast(request)
     storedCast.wait()
     mc = storedCast.media_controller
     time.sleep(REFRESH_TIME)
-    print(str(mc.status.player_state))
     mc.stop()
     data = {}
     data["stop"] = "true"
@@ -102,7 +114,6 @@ def pause(request):
     storedCast.wait()
     mc = storedCast.media_controller
     time.sleep(REFRESH_TIME)
-    print(str(mc.status.player_state))
     status = "true"
     if mc.status.player_state == "PLAYING":
         mc.pause()
@@ -139,7 +150,14 @@ def track(request):
     status["volume"] = storedCast.status.volume_level
     status["content"] = mc.status.content_id
     status["app"] = storedCast.status.display_name
-    return AdministrationUtils.httpResponse(str(status))
+    try:
+        #storedCast.socket_client.socket.close()
+        storedCast.socket_client.disconnect()
+        storedCast.disconnect()
+    except Exception as e:
+        print(str(e))
+        pass
+    return AdministrationUtils.jsonResponse(status)
 
 def getCast(request):
     friendly_name = request.session["friendly_name"]

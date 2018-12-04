@@ -1,7 +1,8 @@
 <div class="bd-group-controls">
   <div class="input-group-sm">
-    <div class="fas ">track - source</div>
-    <div class="right">00:00</div>
+    <div id="trackName" class="fas ">track - source</div>
+    <div id="trackTime" class="right">00:00</div>
+    <input type="hidden" id="totalVal" value="" />
   </div>
   <div class="input-group-sm">
 
@@ -15,7 +16,7 @@
     <i id="volumeUp" class="fas fa-volume-up"></i>
 
   </div>
-  <div class="progress">
-    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" style="width: 1%"></div>
+  <div id="progressParent" class="progress">
+    <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" style="width: 1%"></div>
   </div>
 </div>
