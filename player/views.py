@@ -1,20 +1,54 @@
 from django.shortcuts import render
 
 from utils.administrationUtils import AdministrationUtils
+from django.conf import settings
 
 import pychromecast
 from pychromecast import Chromecast, DeviceStatus, CAST_TYPES, CAST_TYPE_CHROMECAST
 import json
 import base64
 import time
+import threading
+from datetime import datetime
 
 from utils.decoder import decodeUrl
-
 from player.models import Device
+from player.models import Status
 
 MESSAGE_TYPE = 'type'
 TYPE_PAUSE = "PAUSE"
-REFRESH_TIME = 0.3
+REFRESH_TIME = 0.5
+REQUESTED_TIME = 1
+
+def background_process():
+    try:
+        while settings.RUN:
+            print("background is running...")
+            storedCast = getStoredCast()
+            mc = storedCast.media_controller
+            time.sleep(REFRESH_TIME)
+            Status.objects.all().delete()
+            status = Status()
+            status.duration = mc.status.duration
+            status.current = mc.status.current_time
+            status.state = mc.status.player_state
+            status.volume = storedCast.status.volume_level
+            status.content = mc.status.content_id
+            status.app = storedCast.status.display_name
+            status.save()
+            try:
+                #storedCast.socket_client.socket.close()
+                storedCast.socket_client.disconnect()
+                storedCast.disconnect()
+            except Exception as e:
+                print(str(e))
+                pass
+            time.sleep(REQUESTED_TIME-REFRESH_TIME) #should be exactly time requested
+    except Exception as e:
+        settings.RUN = False
+        print("Ex:",e)
+        pass
+    print("background has finished")
 
 def index(request):
     context = { }
@@ -24,6 +58,11 @@ def index(request):
         name = device.friendly_name
         context["id"] = id
         context["name"] = name
+        if not settings.RUN:
+            settings.RUN = True
+            t = threading.Thread(target=background_process, args=(), kwargs={})
+            t.setDaemon(True)
+            t.start()
     return AdministrationUtils.render(request,'player/index.html',context)
 
 def select_device(request,target):
@@ -140,23 +179,37 @@ def volume(request):
     return AdministrationUtils.httpResponse(str(cast))
 
 def track(request):
-    storedCast = getStoredCast(request)
-    mc = storedCast.media_controller
-    time.sleep(REFRESH_TIME)
+    #storedCast = getStoredCast(request)
+    #mc = storedCast.media_controller
+    #time.sleep(REFRESH_TIME)
+    #status = {}
+    #status["duration"] = mc.status.duration
+    #status["current"] = mc.status.current_time
+    #status["state"] = mc.status.player_state
+    #status["volume"] = storedCast.status.volume_level
+    #status["content"] = mc.status.content_id
+    #status["app"] = storedCast.status.display_name
+    storedStatus = Status.objects.latest('id')
     status = {}
-    status["duration"] = mc.status.duration
-    status["current"] = mc.status.current_time
-    status["state"] = mc.status.player_state
-    status["volume"] = storedCast.status.volume_level
-    status["content"] = mc.status.content_id
-    status["app"] = storedCast.status.display_name
-    try:
-        #storedCast.socket_client.socket.close()
-        storedCast.socket_client.disconnect()
-        storedCast.disconnect()
-    except Exception as e:
-        print(str(e))
-        pass
+    if storedStatus.state == "PLAYING":
+        current = storedStatus.updated.timestamp()
+        now = datetime.now().timestamp()
+        difference = now - current
+    else:
+        difference = 0
+    status["duration"] = storedStatus.duration
+    status["current"] = difference + storedStatus.current
+    status["state"] = storedStatus.state
+    status["volume"] = storedStatus.volume
+    status["content"] = storedStatus.content
+    status["app"] = storedStatus.app
+    #try:
+    #    #storedCast.socket_client.socket.close()
+    #    storedCast.socket_client.disconnect()
+    #    storedCast.disconnect()
+    #except Exception as e:
+    #    print(str(e))
+    #    pass
     return AdministrationUtils.jsonResponse(status)
 
 def getCast(request):
@@ -173,13 +226,17 @@ def getCast(request):
     cast = Chromecast(host=ip_address, port=port, device=device)
     return cast
 
-def getStoredCast(request):
-    try:
-        integerId = int(request.POST.get("id"))
-        device = Device.objects.get(id=integerId)
-    except:
+def getStoredCast(request = None):
+    if request is not None:
+        try:
+            integerId = int(request.POST.get("id"))
+            device = Device.objects.get(id=integerId)
+        except:
+            device = Device.objects.latest('id')
+            pass
+    else:
         device = Device.objects.latest('id')
-        pass
+
     friendly_name = device.friendly_name
     model_name = device.model_name
     uuid = device.uuid

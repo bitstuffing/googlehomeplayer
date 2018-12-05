@@ -26,3 +26,13 @@ class Device(models.Model):
     uuid = models.CharField(max_length=40)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+class Status(models.Model):
+    id = models.AutoField(primary_key=True)
+    duration = models.FloatField(default=0.0,null=True)
+    current = models.FloatField(default=0.0,null=True)
+    state = models.CharField(max_length=20,default="UNKNOWN",null=True)
+    volume = models.FloatField(default=0.0,null=True)
+    content = models.TextField(default="UNKNOWN",null=True)
+    app = models.CharField(max_length=20,default="UNKNNOWN",null=True)
+    updated = models.DateTimeField(auto_now_add=True)
