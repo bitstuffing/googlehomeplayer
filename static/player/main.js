@@ -4,7 +4,10 @@ function refresh(){
     total = parseInt(r.duration);
     $("#totalVal").val(total);
     time = parseInt(r.current);
-    percent = Math.floor(parseFloat(time / total) * 100)
+    percent = 0;
+    if(total > 0){
+      percent = Math.floor(parseFloat(time / total) * 100)
+    }
     //console.log(time)
     minutes = parseInt(time/60);
     if(minutes > 60){
