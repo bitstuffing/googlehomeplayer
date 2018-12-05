@@ -24,7 +24,7 @@ function refresh(){
 
 $(document).ready(function(){
 
-  $("#progressParent").click(function(e){
+  $("#progressParent").on('touchend click',function(e){
     console.log(e);
     var x = e.pageX - this.offsetLeft;
     var y = e.pageY - e.offsetY;
@@ -38,7 +38,7 @@ $(document).ready(function(){
     });
   });
 
-  $("#volumeUp").click(function(){
+  $("#volumeUp").on('touchend click',function(){
       $.post("/volume/",{
           "up" : "true",
           "id" : $("#selectedId").val()
@@ -47,7 +47,7 @@ $(document).ready(function(){
       });
   });
 
-  $("#volumeDown").click(function(){
+  $("#volumeDown").on('touchend click',function(){
       $.post("/volume/",{
           "up" : "false",
           "id" : $("#selectedId").val()
@@ -56,7 +56,7 @@ $(document).ready(function(){
       });
   });
 
-  $("#buttonLink").click(function(){
+  $("#buttonLink").on('touchend click',function(){
       var link = $("#inputLink").val();
       var encodedLink = encodeURI(btoa(link))
       if($("#videoLink").is(':checked')){
@@ -72,19 +72,19 @@ $(document).ready(function(){
       $.post("/play/",data,function(r){console.log(r)});
   });
 
-  $("#stopIcon").click(function(){
+  $("#stopIcon").on('touchend click',function(){
       $.post("/stop/",{
           "id" : $("#selectedId").val()
       },function(e){console.log(e)});
   });
 
-  $("#pauseIcon").click(function(){
+  $("#pauseIcon").on('touchend click',function(){
       $.post("/pause/",{
           "id" : $("#selectedId").val()
       },function(e){console.log(e)});
   });
 
-  $("#selectDevice").click(function(){
+  $("#selectDevice").on('touchend click',function(){
       $("#status").text("Obtaining devices...");
       $("#loadingSpin").show();
       $("#inputSelectDevice").hide();
@@ -117,5 +117,5 @@ $(document).ready(function(){
 
   $("#status").text("Ready!");
 
-  refresh()
+  refresh();
 });
