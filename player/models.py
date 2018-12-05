@@ -1,21 +1,26 @@
 from django.db import models
 
-class Track(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=30)
-    url = models.CharField(max_length=1024)
-    duration = models.IntegerField()
-
-
 class Playlist(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=30)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-class TrackPlaylist(models.Model):
-    track = models.ForeignKey(Track,on_delete=models.CASCADE)
-    playlist = models.ManyToManyField(Playlist)
+class Track(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=40)
+    url = models.CharField(max_length=1024)
+    original_url = models.CharField(max_length=1024)
+    duration = models.FloatField(default=0.0,null=True)
+    type = models.CharField(max_length=5) #audio, video, page
+    playlist = models.ForeignKey(Playlist,on_delete=models.CASCADE)
+
+class CurrentPlaylist(models.Model):
+    id = models.AutoField(primary_key=True)
+    device = models.IntegerField(default=0,null=True)
+    playlist = models.ForeignKey(Playlist,on_delete=models.CASCADE)
+    random = models.BooleanField(default=False)
+    current_track = models.ForeignKey(Track,on_delete=models.CASCADE,null=True)
 
 class Device(models.Model):
     id = models.AutoField(primary_key=True)
@@ -35,4 +40,4 @@ class Status(models.Model):
     volume = models.FloatField(default=0.0,null=True)
     content = models.TextField(default="UNKNOWN",null=True)
     app = models.CharField(max_length=20,default="UNKNNOWN",null=True)
-    updated = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)

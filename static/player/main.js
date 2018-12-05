@@ -1,5 +1,15 @@
 function refresh(){
   //console.log("refreshing...")
+  $("#currentPlaylist").children().remove();
+  $.getJSON("/playlist/",function(response){
+
+    $.each(response.tracks,function(i,r){
+      var hidden = " <input type='hidden' name='track_url' value='"+r.url+"' > ";
+      var element = '<li class="list-group-item">'+r.name+hidden+'</li>';
+      $("#currentPlaylist").append(element);
+    });
+  });
+
   $.getJSON("/track/",function(r){
     total = parseInt(r.duration);
     $("#totalVal").val(total);

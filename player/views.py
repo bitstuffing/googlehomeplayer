@@ -14,6 +14,9 @@ from datetime import datetime
 from utils.decoder import decodeUrl
 from player.models import Device
 from player.models import Status
+from player.models import CurrentPlaylist
+from player.models import Playlist
+from player.models import Track
 
 MESSAGE_TYPE = 'type'
 TYPE_PAUSE = "PAUSE"
@@ -24,31 +27,111 @@ def background_process():
     try:
         while settings.RUN:
             print("background is running...")
+            #updates related to current
             storedCast = getStoredCast()
             mc = storedCast.media_controller
             time.sleep(REFRESH_TIME)
-            Status.objects.all().delete()
-            status = Status()
-            status.duration = mc.status.duration
-            status.current = mc.status.current_time
-            status.state = mc.status.player_state
-            status.volume = storedCast.status.volume_level
-            status.content = mc.status.content_id
-            status.app = storedCast.status.display_name
-            status.save()
+            if Status.objects.count() == 0:
+                status = Status()
+            else:
+                status = Status.objects.latest('id')
             try:
+                status.duration = mc.status.duration
+                status.current = mc.status.current_time
+                tempState = mc.status.player_state
+                if not (tempState == "UNKNOWN" and status.state == "LOADING"):
+                    status.state = tempState
+                status.volume = storedCast.status.volume_level
+                status.content = mc.status.content_id
+                status.app = storedCast.status.display_name
+                status.save()
                 #storedCast.socket_client.socket.close()
                 storedCast.socket_client.disconnect()
                 storedCast.disconnect()
             except Exception as e:
                 print(str(e))
                 pass
+            #controls player playlist
+            if status.state != "PLAYING" and status.state != "PAUSED" and status.state != "LOADING" and status.state != "BUFFERING" and CurrentPlaylist.objects.count():
+                #check if there is an active playlist and if there are tracks
+                print("checking..."+str(status.state))
+                currentPlaylist = CurrentPlaylist.objects.latest('id')
+                playlistId = currentPlaylist.playlist_id
+                tracks = Track.objects.filter(playlist_id=playlistId).order_by("id")
+                finalUrl = None
+                found = False
+                format = "audio"
+                for track in tracks:
+                    targetUrl = track.original_url
+                    print("checking: "+targetUrl+", id: "+str(track.id))
+                    if currentPlaylist.current_track_id is None:
+                        print("a")
+                        finalUrl = targetUrl
+                        format = track.type
+                        currentPlaylist.current_track_id = track.id
+                        currentPlaylist.save()
+                        status.state = "LOADING"
+                        status.save()
+                        break
+                    elif track.id == currentPlaylist.current_track_id:
+                        print("b")
+                        found = True #indicate next
+                    elif found:
+                        print("c")
+                        finalUrl = targetUrl
+                        format = track.type
+                        currentPlaylist.current_track_id = track.id
+                        currentPlaylist.save()
+                        status.state = "LOADING"
+                        status.save()
+                        break
+                    else:
+                        print("d")
+
+                if found and finalUrl is None:
+                    currentPlaylist.delete()
+
+                audio = False
+                if format == "audio":
+                    audio = True
+
+                cast = getStoredCast()
+                if finalUrl is not None:
+                    if ("youtube." in finalUrl or "youtu." in finalUrl ) and not audio:
+                        audio = False
+                        from pychromecast.controllers.youtube import YouTubeController
+                        yt = YouTubeController()
+                        cast.register_handler(yt)
+                        finalUrl = finalUrl[finalUrl.rfind("=")+1:]
+                        yt.play_video(finalUrl)
+                    else:
+                        mc = cast.media_controller
+                        try:
+                            playerUrl = decodeUrl(finalUrl,audio)
+                            decoded = playerUrl
+                        except Exception as ex:
+                            print(str(ex))
+                            playerUrl = finalUrl
+                            pass
+                        mc.play_media(playerUrl,format)
             time.sleep(REQUESTED_TIME-REFRESH_TIME) #should be exactly time requested
     except Exception as e:
         settings.RUN = False
         print("Ex:",e)
         pass
     print("background has finished")
+
+def current_playlist(request):
+    jsonTracks = []
+    if CurrentPlaylist.objects.count():
+        current = CurrentPlaylist.objects.latest("id")
+        tracks = Track.objects.filter(playlist_id = current.playlist_id).order_by("id")
+        for track in tracks:
+            jsonTrack = {}
+            jsonTrack["url"] = track.original_url
+            jsonTrack["name"] = track.name
+            jsonTracks.append(jsonTrack)
+    return AdministrationUtils.httpResponse(json.dumps({"tracks": jsonTracks}))
 
 def index(request):
     context = { }
@@ -96,34 +179,43 @@ def get_devices(request):
 
 def play(request):
     url = request.POST.get("url")
-    audio = True
-    cast = getStoredCast(request)
     finalUrl = base64.b64decode(url).decode("utf-8")
     data = {}
     data["playing"] = str(finalUrl)
-    if ("youtube." in finalUrl or "youtu." in finalUrl ) and "video" in request.POST and request.POST.get("video") == "true":
-        audio = False
-        from pychromecast.controllers.youtube import YouTubeController
-        yt = YouTubeController()
-        cast.register_handler(yt)
-        finalUrl = finalUrl[finalUrl.rfind("=")+1:]
-        yt.play_video(finalUrl)
-    else:
-        mc = cast.media_controller
-        if "video" in request.POST and request.POST.get("video") is "false":
-            audio = False
-        try:
-            playerUrl = decodeUrl(finalUrl,audio)
-            data["decoded"] = playerUrl
-        except Exception as ex:
-            print(str(ex))
-            playerUrl = finalUrl
-            pass
-        format = "video"
-        if audio:
-            format = "audio"
-        mc.play_media(playerUrl,format)
+    isVideo = False
+    if "video" in request.POST and request.POST.get("video") == "true":
+        isVideo = True
+    decode(finalUrl,isVideo)
     return AdministrationUtils.httpResponse(json.dumps(data))
+
+def decode(finalUrl,isVideo):
+    if CurrentPlaylist.objects.count()==0:
+        print("creating playlist (1)")
+        currentPlaylist = CurrentPlaylist()
+        currentPlaylist.device = Device.objects.latest('id').id
+        random = False
+
+        playlist = Playlist()
+        playlist.name = "Dummy playlist name"
+        playlist.save()
+    else:
+        print("current playlist (2)")
+        currentPlaylist = CurrentPlaylist.objects.latest('id')
+        playlist = Playlist.objects.get(id=currentPlaylist.playlist_id)
+
+    track = Track()
+    track.name = "Dummy track name"
+    track.original_url = finalUrl
+    track.type = "audio"
+    track.playlist_id = playlist.id
+    if isVideo:
+        track.type = "video"
+    track.save()
+
+    if CurrentPlaylist.objects.count()==0:
+        currentPlaylist.playlist = playlist
+        currentPlaylist.save()
+
 
 def seek(request):
     storedCast = getStoredCast(request)
@@ -144,6 +236,14 @@ def stop(request):
     mc = storedCast.media_controller
     time.sleep(REFRESH_TIME)
     mc.stop()
+    if CurrentPlaylist.objects.count():
+        CurrentPlaylist.objects.latest('id').delete()
+    if Status.objects.count() == 0:
+        status = Status()
+    else:
+        status = Status.objects.latest('id')
+    status.state = "UNKNOWN" #stopped
+    status.save()
     data = {}
     data["stop"] = "true"
     return AdministrationUtils.jsonResponse(data)
@@ -191,7 +291,7 @@ def track(request):
     #status["app"] = storedCast.status.display_name
     storedStatus = Status.objects.latest('id')
     status = {}
-    if storedStatus.state == "PLAYING":
+    if storedStatus.state == "PLAYING" or storedStatus.state == "PAUSED":
         current = storedStatus.updated.timestamp()
         now = datetime.now().timestamp()
         difference = now - current

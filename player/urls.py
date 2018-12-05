@@ -13,4 +13,5 @@ urlpatterns = [
     url('^volume/', views.volume, name='volume'),
     url('^seek/', views.seek, name='seek'),
     url('^track/', views.track, name='track'),
+    url('^playlist/', views.current_playlist, name='current_playlist'),
 ]
