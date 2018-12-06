@@ -3,9 +3,16 @@ function refresh(){
 
   $.getJSON("/playlist/",function(response){
     $("#currentPlaylist").children().remove();
+    if($("#hiddenSelectedTrack").length > 0){
+      var hiddenValue = $("#hiddenSelectedTrack").val()
+    }
     $.each(response.tracks,function(i,r){
       var hidden = " <input type='hidden' name='track_url' value='"+r.url+"' > ";
-      var element = '<li class="list-group-item">'+r.name+hidden+'</li>';
+      var classes = "list-group-item ";
+      if (hiddenValue == r.id){
+        classes += 'active';
+      }
+      var element = '<li id="playlist_track_'+r.id+'" class="'+classes+'">'+r.name+hidden+'</li>';
       $("#currentPlaylist").append(element);
     });
   });
@@ -26,6 +33,13 @@ function refresh(){
     seconds = time%60;
     if(seconds < 10){
       seconds = "0"+seconds;
+    }
+    if(r.track_id != "undefined"){
+      $("#trackName").text(r.track_name);
+      //$("[id^='playlist_track_']").not("#playlist_track_"+r.track_id).removeClass("active");
+      //$("#playlist_track_"+r.track_id).addClass("active");
+      $("#hiddenSelectedTrack").remove();
+      $("body").append("<input type='hidden' id='hiddenSelectedTrack' value='"+r.track_id+"' >");
     }
     $("#trackTime").text(minutes+":"+seconds);
     percent = percent+"%";

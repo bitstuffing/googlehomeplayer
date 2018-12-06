@@ -10,7 +10,6 @@ import time
 import threading
 from datetime import datetime
 
-from utils.decoder import Decoder
 from utils.administrationUtils import AdministrationUtils
 
 from player.models import Device
@@ -19,8 +18,11 @@ from player.models import CurrentPlaylist
 from player.models import Playlist
 from player.models import Track
 
+from utils.decoder import Decoder
+
 MESSAGE_TYPE = 'type'
 TYPE_PAUSE = "PAUSE"
+
 REFRESH_TIME = 0.5
 REQUESTED_TIME = 1
 
@@ -150,6 +152,7 @@ def playlist(request):
                 tracks = Track.objects.filter(playlist_id=idNumber).order_by("id")
                 for track in tracks:
                     jsonTrack = {}
+                    jsonTrack["id"] = track.id
                     jsonTrack["url"] = track.original_url
                     jsonTrack["name"] = track.name
                     jsonTrack["description"] = track.description
@@ -190,6 +193,7 @@ def current_playlist():
         tracks = Track.objects.filter(playlist_id = current.playlist_id).order_by("id")
         for track in tracks:
             jsonTrack = {}
+            jsonTrack["id"] = track.id
             jsonTrack["url"] = track.original_url
             jsonTrack["name"] = track.name
             jsonTrack["description"] = track.description
@@ -200,7 +204,7 @@ def current_playlist():
     return AdministrationUtils.httpResponse(json.dumps({"tracks": jsonTracks}))
 
 def index(request):
-    context = { }
+    context = {}
     if Device.objects.count():
         device = Device.objects.latest("id")
         id = device.id
@@ -217,11 +221,6 @@ def index(request):
 def select_device(request,target):
     chromecasts = pychromecast.get_chromecasts()
     cast = next(cc for cc in chromecasts if cc.device.friendly_name == target)
-    #request.session["ip_address"] = cast.host
-    #request.session["port"] = cast.port
-    #request.session["friendly_name"] = target
-    #request.session["model_name"] = cast.model_name
-    #request.session["uuid"] = str(cast.uuid)
     Device.objects.all().delete()
     device = Device()
     device.ip_address = cast.host
@@ -256,16 +255,15 @@ def play(request):
 
 def decode(finalUrl,isVideo):
     if CurrentPlaylist.objects.count()==0:
-        print("creating playlist (1)")
+        print("Creating a new playlist (1)")
         currentPlaylist = CurrentPlaylist()
         currentPlaylist.device = Device.objects.latest('id').id
         random = False
-
         playlist = Playlist()
         playlist.name = "New playlist"
         playlist.save()
     else:
-        print("current playlist (2)")
+        print("Using current playlist (2)")
         currentPlaylist = CurrentPlaylist.objects.latest('id')
         playlist = Playlist.objects.get(id=currentPlaylist.playlist_id)
 
@@ -277,7 +275,7 @@ def decode(finalUrl,isVideo):
     if isVideo:
         track.type = "video"
     track.save()
-
+    #select playlist in current playlists
     if CurrentPlaylist.objects.count()==0:
         currentPlaylist.playlist = playlist
         currentPlaylist.save()
@@ -339,22 +337,12 @@ def volume(request):
         vol = vol+0.1
     else:
         vol = vol-0.1
-    #status.volume_level = vol
     cast.set_volume(vol)
     cast.wait()
     return AdministrationUtils.httpResponse(str(cast))
 
 def track(request):
-    #storedCast = getStoredCast(request)
-    #mc = storedCast.media_controller
-    #time.sleep(REFRESH_TIME)
-    #status = {}
-    #status["duration"] = mc.status.duration
-    #status["current"] = mc.status.current_time
-    #status["state"] = mc.status.player_state
-    #status["volume"] = storedCast.status.volume_level
-    #status["content"] = mc.status.content_id
-    #status["app"] = storedCast.status.display_name
+
     storedStatus = Status.objects.latest('id')
     status = {}
     if storedStatus.state == "PLAYING" or storedStatus.state == "PAUSED":
@@ -369,28 +357,15 @@ def track(request):
     status["volume"] = storedStatus.volume
     status["content"] = storedStatus.content
     status["app"] = storedStatus.app
-    #try:
-    #    #storedCast.socket_client.socket.close()
-    #    storedCast.socket_client.disconnect()
-    #    storedCast.disconnect()
-    #except Exception as e:
-    #    print(str(e))
-    #    pass
-    return AdministrationUtils.jsonResponse(status)
 
-def getCast(request):
-    friendly_name = request.session["friendly_name"]
-    model_name = request.session["model_name"]
-    uuid = request.session["uuid"]
-    ip_address = request.session["ip_address"]
-    port = request.session["port"]
-    cast_type = CAST_TYPES.get(model_name.lower(), CAST_TYPE_CHROMECAST)
-    device = DeviceStatus(
-        friendly_name=friendly_name, model_name=model_name,
-        manufacturer=None, uuid=uuid, cast_type=cast_type
-    )
-    cast = Chromecast(host=ip_address, port=port, device=device)
-    return cast
+    if CurrentPlaylist.objects.count():
+        currentPlaylist = CurrentPlaylist.objects.latest("id")
+        track = currentPlaylist.current_track
+        status["track_name"] = track.name
+        status["track_id"] = track.id
+        status["track_url"] = track.original_url
+
+    return AdministrationUtils.jsonResponse(status)
 
 def getStoredCast(request = None):
     if request is not None:
