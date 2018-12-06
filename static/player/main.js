@@ -82,10 +82,9 @@ $(document).ready(function(){
       $.post("/playlist/",{"id":"all"},function(response){
         var res = $.parseJSON(response);
         $.each(res.playlists,function(i,r){
-          console.log(r);
-          var edit = '<i onclick="editPlaylist(\''+r.id+'\')"  class="far fa-edit" style="float:right;cursor:pointer;margin-right: 5px;"></i> ';
-          var trash = ' <i onclick="deletePlaylist(\''+r.id+'\')" class="fa fa-trash" aria-hidden="true" style="float:right;cursor:pointer;"></i>';
-          var target = '<span onclick="selectPlaylist(\''+r.id+'\')" style="cursor:pointer;">'+r.name+'</span>';
+          var edit = '<i onclick="editPlaylist(\''+r.id+'\')" ontouchend="editPlaylist(\''+r.id+'\')" class="far fa-edit" style="float:right;cursor:pointer;margin-right: 5px;"></i> ';
+          var trash = ' <i onclick="deletePlaylist(\''+r.id+'\')" ontouchend="deletePlaylist(\''+r.id+'\')" class="fa fa-trash" aria-hidden="true" style="float:right;cursor:pointer;"></i>';
+          var target = '<span onclick="selectPlaylist(\''+r.id+'\')" ontouchend="selectPlaylist(\''+r.id+'\')" style="cursor:pointer;">'+r.name+'</span>';
           var element = '<li class="list-group-item">'+target+trash+edit+'</li>';
           $("#playlistList").append(element);
         });
