@@ -14,6 +14,9 @@ class Track(models.Model):
     duration = models.FloatField(default=0.0,null=True)
     type = models.CharField(max_length=5) #audio, video, page
     playlist = models.ForeignKey(Playlist,on_delete=models.CASCADE)
+    description = models.TextField(default="UNKNOWN",null=True)
+    thumbnail = models.CharField(max_length=1024,null=True,default="UNKNOWN")
+    creator = models.CharField(max_length=40,null=True,default="UNKNOWN")
 
 class CurrentPlaylist(models.Model):
     id = models.AutoField(primary_key=True)

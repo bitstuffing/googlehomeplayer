@@ -1,6 +1,5 @@
 from django.shortcuts import render
 
-from utils.administrationUtils import AdministrationUtils
 from django.conf import settings
 
 import pychromecast
@@ -11,7 +10,9 @@ import time
 import threading
 from datetime import datetime
 
-from utils.decoder import decodeUrl
+from utils.decoder import Decoder
+from utils.administrationUtils import AdministrationUtils
+
 from player.models import Device
 from player.models import Status
 from player.models import CurrentPlaylist
@@ -52,7 +53,7 @@ def background_process():
                 print(str(e))
                 pass
             #controls player playlist
-            if status.state != "PLAYING" and status.state != "PAUSED" and status.state != "LOADING" and status.state != "BUFFERING" and CurrentPlaylist.objects.count():
+            if status.state != "IDLE" and status.state != "PLAYING" and status.state != "PAUSED" and status.state != "LOADING" and status.state != "BUFFERING" and CurrentPlaylist.objects.count():
                 #check if there is an active playlist and if there are tracks
                 print("checking..."+str(status.state))
                 currentPlaylist = CurrentPlaylist.objects.latest('id')
@@ -61,12 +62,14 @@ def background_process():
                 finalUrl = None
                 found = False
                 format = "audio"
+                targetTrack = None
                 for track in tracks:
                     targetUrl = track.original_url
                     print("checking: "+targetUrl+", id: "+str(track.id))
                     if currentPlaylist.current_track_id is None:
                         print("a")
                         finalUrl = targetUrl
+                        targetTrack = track #save track, needed to metadata info
                         format = track.type
                         currentPlaylist.current_track_id = track.id
                         currentPlaylist.save()
@@ -79,6 +82,7 @@ def background_process():
                     elif found:
                         print("c")
                         finalUrl = targetUrl
+                        targetTrack = track #save track, needed to metadata info
                         format = track.type
                         currentPlaylist.current_track_id = track.id
                         currentPlaylist.save()
@@ -97,7 +101,9 @@ def background_process():
 
                 cast = getStoredCast()
                 if finalUrl is not None:
+                    print("trying to play: "+finalUrl)
                     if ("youtube." in finalUrl or "youtu." in finalUrl ) and not audio:
+                        print("youtube app...")
                         audio = False
                         from pychromecast.controllers.youtube import YouTubeController
                         yt = YouTubeController()
@@ -105,9 +111,11 @@ def background_process():
                         finalUrl = finalUrl[finalUrl.rfind("=")+1:]
                         yt.play_video(finalUrl)
                     else:
+                        print("decoder part...")
                         mc = cast.media_controller
                         try:
-                            playerUrl = decodeUrl(finalUrl,audio)
+                            playerUrl = Decoder.decodeUrl(targetTrack,audio)
+                            print("decoder has returned: "+playerUrl)
                             decoded = playerUrl
                         except Exception as ex:
                             print(str(ex))
@@ -130,6 +138,10 @@ def current_playlist(request):
             jsonTrack = {}
             jsonTrack["url"] = track.original_url
             jsonTrack["name"] = track.name
+            jsonTrack["description"] = track.description
+            jsonTrack["creator"] = track.creator
+            jsonTrack["thumbnail"] = track.thumbnail
+            jsonTrack["duration"] = track.duration
             jsonTracks.append(jsonTrack)
     return AdministrationUtils.httpResponse(json.dumps({"tracks": jsonTracks}))
 
@@ -196,7 +208,7 @@ def decode(finalUrl,isVideo):
         random = False
 
         playlist = Playlist()
-        playlist.name = "Dummy playlist name"
+        playlist.name = "New playlist"
         playlist.save()
     else:
         print("current playlist (2)")
