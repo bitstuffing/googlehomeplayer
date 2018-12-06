@@ -169,6 +169,17 @@ def playlist(request):
                 obtainedId = request.POST.get("id")
                 Playlist.objects.get(id=obtainedId).delete()
                 response["id"] = obtainedId
+            elif action == "select":
+                stop(request)
+                obtainedId = request.POST.get("id")
+                if CurrentPlaylist.objects.count():
+                    CurrentPlaylist.objects.latest('id').delete()
+                currentPlaylist = CurrentPlaylist()
+                currentPlaylist.device = Device.objects.latest('id').id
+                playlist = Playlist.objects.get(id=obtainedId)
+                currentPlaylist.playlist = playlist
+                currentPlaylist.save()
+                response["id"] = obtainedId
             return AdministrationUtils.jsonResponse(response)
 
 

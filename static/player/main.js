@@ -41,6 +41,16 @@ function deletePlaylist(id){
   });
 }
 
+function editPlaylist(id){
+
+}
+
+function selectPlaylist(id){
+  $.post("/playlist/",{"id":id,"action":"select"},function(response){
+    $("#currentPlaylistLink").trigger("click");
+  });
+}
+
 $(document).ready(function(){
 
   $(".nav-link").on("touched click",function(e){
@@ -59,9 +69,10 @@ $(document).ready(function(){
         var res = $.parseJSON(response);
         $.each(res.playlists,function(i,r){
           console.log(r);
-          var hidden = " <input type='hidden' name='playlist_id' value='"+r.id+"' > ";
-          var trash = '<i onclick="deletePlaylist(\''+r.id+'\')" class="fa fa-trash" aria-hidden="true" style="float:right;cursor:pointer;"></i>';
-          var element = '<li class="list-group-item">'+r.name+hidden+trash+'</li>';
+          var edit = '<i onclick="editPlaylist(\''+r.id+'\')"  class="far fa-edit" style="float:right;cursor:pointer;margin-right: 5px;"></i> ';
+          var trash = ' <i onclick="deletePlaylist(\''+r.id+'\')" class="fa fa-trash" aria-hidden="true" style="float:right;cursor:pointer;"></i>';
+          var target = '<span onclick="selectPlaylist(\''+r.id+'\')" style="cursor:pointer;">'+r.name+'</span>';
+          var element = '<li class="list-group-item">'+target+trash+edit+'</li>';
           $("#playlistList").append(element);
         });
       });
