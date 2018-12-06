@@ -55,8 +55,18 @@ function deletePlaylist(id){
   });
 }
 
-function editPlaylist(id){
-
+function editPlaylist(id,title){
+  $("#titleInput").val(title);
+  $("#titleInput").after("<input type='hidden' id='hiddenSelectedPlaylist' value='"+id+"' >")
+  $("#modalPlaylist").modal('show');
+  $("#closePlaylistEdition").on("touched click",function(e){
+    var value = $("#hiddenSelectedPlaylist").val();
+    var title = $("#titleInput").val();
+    $.post("/playlist/",{"id":value,"action":"edit","title":title},function(){
+      $("#playlistLink").trigger("click");
+    });
+    $("#hiddenSelectedPlaylist").remove();
+  });
 }
 
 function selectPlaylist(id){
@@ -82,10 +92,10 @@ $(document).ready(function(){
       $.post("/playlist/",{"id":"all"},function(response){
         var res = $.parseJSON(response);
         $.each(res.playlists,function(i,r){
-          var edit = '<i onclick="editPlaylist(\''+r.id+'\')" ontouchend="editPlaylist(\''+r.id+'\')" class="far fa-edit" style="float:right;cursor:pointer;margin-right: 5px;"></i> ';
-          var trash = ' <i onclick="deletePlaylist(\''+r.id+'\')" ontouchend="deletePlaylist(\''+r.id+'\')" class="fa fa-trash" aria-hidden="true" style="float:right;cursor:pointer;"></i>';
-          var target = '<span onclick="selectPlaylist(\''+r.id+'\')" ontouchend="selectPlaylist(\''+r.id+'\')" style="cursor:pointer;">'+r.name+'</span>';
-          var element = '<li class="list-group-item">'+target+trash+edit+'</li>';
+          var edit = '<i onclick="editPlaylist(\''+r.id+'\',\''+r.name+'\')" ontouchend="editPlaylist(\''+r.id+'\',\''+r.name+'\')" class="far fa-edit" style="float:right;cursor:pointer;margin-right: 5px;"></i> ';
+          var trash = ' <i onclick="deletePlaylist(\''+r.id+'\',\''+r.name+'\')" ontouchend="deletePlaylist(\''+r.id+'\',\''+r.name+'\')" class="fa fa-trash" aria-hidden="true" style="float:right;cursor:pointer;"></i>';
+          var target = '<span onclick="selectPlaylist(\''+r.id+'\',\''+r.name+'\')" ontouchend="selectPlaylist(\''+r.id+'\',\''+r.name+'\')" style="cursor:pointer;">'+r.name+'</span>';
+          var element = '<li class="list-group-item" >'+target+trash+edit+'</li>';
           $("#playlistList").append(element);
         });
       });

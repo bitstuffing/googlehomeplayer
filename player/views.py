@@ -183,6 +183,12 @@ def playlist(request):
                 currentPlaylist.playlist = playlist
                 currentPlaylist.save()
                 response["id"] = obtainedId
+            elif action == "edit":
+                obtainedId = request.POST.get("id")
+                title = request.POST.get("title")
+                playlist = Playlist.objects.get(id=obtainedId)
+                playlist.name = title
+                playlist.save()
             return AdministrationUtils.jsonResponse(response)
 
 
