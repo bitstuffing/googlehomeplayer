@@ -1,8 +1,8 @@
 function refresh(){
   //console.log("refreshing...")
-  $("#currentPlaylist").children().remove();
-  $.getJSON("/playlist/",function(response){
 
+  $.getJSON("/playlist/",function(response){
+    $("#currentPlaylist").children().remove();
     $.each(response.tracks,function(i,r){
       var hidden = " <input type='hidden' name='track_url' value='"+r.url+"' > ";
       var element = '<li class="list-group-item">'+r.name+hidden+'</li>';
