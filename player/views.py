@@ -129,7 +129,50 @@ def background_process():
         pass
     print("background has finished")
 
-def current_playlist(request):
+def playlist(request):
+    if "id" not in request.POST:
+        return current_playlist()
+    else:
+        id = request.POST.get("id")
+        if id == "all": #all playlist
+            jsonPlaylists = []
+            playlists = Playlist.objects.all()
+            for playlist in playlists:
+                jsonPlaylist = {}
+                jsonPlaylist["id"] = playlist.id
+                jsonPlaylist["name"] = playlist.name
+                jsonPlaylists.append(jsonPlaylist)
+            return AdministrationUtils.httpResponse(json.dumps({"playlists": jsonPlaylists}))
+        elif "action" not in request.POST: #just one playlist
+            jsonTracks = []
+            try:
+                idNumber = int(id)
+                tracks = Track.objects.filter(playlist_id=idNumber).order_by("id")
+                for track in tracks:
+                    jsonTrack = {}
+                    jsonTrack["url"] = track.original_url
+                    jsonTrack["name"] = track.name
+                    jsonTrack["description"] = track.description
+                    jsonTrack["creator"] = track.creator
+                    jsonTrack["thumbnail"] = track.thumbnail
+                    jsonTrack["duration"] = track.duration
+                    jsonTracks.append(jsonTrack)
+            except Exception as e:
+                print("Something goes wrong: "+str(e))
+                pass
+            return AdministrationUtils.httpResponse(json.dumps({"tracks": jsonTracks}))
+        else:
+            action = request.POST.get("action")
+            response = {}
+            response["action"] = action
+            if action == "delete":
+                obtainedId = request.POST.get("id")
+                Playlist.objects.get(id=obtainedId).delete()
+                response["id"] = obtainedId
+            return AdministrationUtils.jsonResponse(response)
+
+
+def current_playlist():
     jsonTracks = []
     if CurrentPlaylist.objects.count():
         current = CurrentPlaylist.objects.latest("id")

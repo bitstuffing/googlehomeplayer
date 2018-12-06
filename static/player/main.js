@@ -35,7 +35,38 @@ function refresh(){
   setTimeout("refresh()",1000);
 }
 
+function deletePlaylist(id){
+  $.post("/playlist/",{"id":id,"action":"delete"},function(response){
+    $("#playlistLink").trigger("click");
+  });
+}
+
 $(document).ready(function(){
+
+  $(".nav-link").on("touched click",function(e){
+    $(".active").removeClass("active")
+    $(this).parent().addClass("active");
+    $("#status").text("Current is: "+$(this).text());
+    var selected = $(this).attr("id");
+    if(selected == 'currentPlaylistLink'){
+      $("#rowPlaylist").addClass("d-none");
+      $("#rowCurrentPlaylist").removeClass("d-none");
+    }else if (selected == 'playlistLink'){
+      $("#rowPlaylist").removeClass("d-none");
+      $("#rowCurrentPlaylist").addClass("d-none");
+      $("#playlistList").children().remove();
+      $.post("/playlist/",{"id":"all"},function(response){
+        var res = $.parseJSON(response);
+        $.each(res.playlists,function(i,r){
+          console.log(r);
+          var hidden = " <input type='hidden' name='playlist_id' value='"+r.id+"' > ";
+          var trash = '<i onclick="deletePlaylist(\''+r.id+'\')" class="fa fa-trash" aria-hidden="true" style="float:right;cursor:pointer;"></i>';
+          var element = '<li class="list-group-item">'+r.name+hidden+trash+'</li>';
+          $("#playlistList").append(element);
+        });
+      });
+    }
+  });
 
   $("#progressParent").on('touchend click',function(e){
     console.log(e);
