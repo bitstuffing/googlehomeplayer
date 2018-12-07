@@ -36,7 +36,8 @@ function refresh(){
       seconds = "0"+seconds;
     }
     if (r.app == "Spotify"){
-      $("#trackName").text("Spotify app");
+      //$("#trackName").text("Spotify app");
+      $("#trackName").text(r.track_name);
     }else if(r.track_id != undefined){
       $("#trackName").text(r.track_name);
       //$("[id^='playlist_track_']").not("#playlist_track_"+r.track_id).removeClass("active");

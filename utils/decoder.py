@@ -43,6 +43,19 @@ class Decoder():
             print("target url is: "+str(url))
         return url
 
+class Spotify():
+    
+    @staticmethod
+    def getMetadata(trackId):
+        id = trackId
+        if ":" in trackId:
+            id = trackId[trackId.rfind(":")+1:]
+        url = "https://open.spotify.com/track/"+id
+        page = urlopen(url).read().decode('utf-8')
+        name = Decoder.extract('"name":"','"',page)
+        artist = Decoder.extract('<meta property="twitter:audio:artist_name" content="','"',page)
+        return name + " - " + artist
+
 
 class Youtube():
 

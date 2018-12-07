@@ -18,7 +18,7 @@ from player.models import CurrentPlaylist
 from player.models import Playlist
 from player.models import Track
 
-from utils.decoder import Decoder
+from utils.decoder import Decoder, Spotify
 
 MESSAGE_TYPE = 'type'
 TYPE_PAUSE = "PAUSE"
@@ -387,6 +387,8 @@ def track(request):
             status["track_name"] = track.name
             status["track_id"] = track.id
             status["track_url"] = track.original_url
+    elif storedStatus.app == "Spotify":
+        status["track_name"] = Spotify.getMetadata(storedStatus.content)
 
     return AdministrationUtils.jsonResponse(status)
 
