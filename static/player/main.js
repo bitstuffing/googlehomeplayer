@@ -35,12 +35,14 @@ function refresh(){
     if(seconds < 10){
       seconds = "0"+seconds;
     }
-    if(r.track_id != "undefined"){
+    if(r.track_id != undefined){
       $("#trackName").text(r.track_name);
       //$("[id^='playlist_track_']").not("#playlist_track_"+r.track_id).removeClass("active");
       //$("#playlist_track_"+r.track_id).addClass("active");
       $("#hiddenSelectedTrack").remove();
       $("body").append("<input type='hidden' id='hiddenSelectedTrack' value='"+r.track_id+"' >");
+    }else{
+      $("#trackName").text(" ");
     }
     $("#trackTime").text(minutes+":"+seconds);
     percent = percent+"%";
