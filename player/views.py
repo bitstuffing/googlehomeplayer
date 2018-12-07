@@ -380,10 +380,13 @@ def track(request):
 
     if CurrentPlaylist.objects.count():
         currentPlaylist = CurrentPlaylist.objects.latest("id")
-        track = currentPlaylist.current_track
-        status["track_name"] = track.name
-        status["track_id"] = track.id
-        status["track_url"] = track.original_url
+        if storedStatus.app == "Spotify": #spotify app has the control
+            currentPlaylist.delete()
+        else: #you have the control
+            track = currentPlaylist.current_track
+            status["track_name"] = track.name
+            status["track_id"] = track.id
+            status["track_url"] = track.original_url
 
     return AdministrationUtils.jsonResponse(status)
 
