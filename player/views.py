@@ -9,6 +9,7 @@ import base64
 import time
 import threading
 from datetime import datetime
+from urllib import request, parse
 
 from utils.administrationUtils import AdministrationUtils
 
@@ -25,6 +26,35 @@ TYPE_PAUSE = "PAUSE"
 
 REFRESH_TIME = 0.5
 REQUESTED_TIME = 1
+
+WAITING = ["IDLE","LOADING","BUFFERING"]
+APPS = ["Spotify","TuneIn Free","Relaxing Sounds"] #"Default Media Receiver"
+PLAYER = "Default Media Receiver"
+STABLE = ["PLAYING", "PAUSED"] #UNKNOWN #"STOPPED"
+
+def control(djangoRequest):
+    if "reboot" in djangoRequest.POST:
+        device = Device.objects.latest("id")
+        ip = device.ip_address
+        jsonData = {"params":"now"}
+        data = '{"params":"now"}'
+        url = "http://"+ip+":8008/setup/reboot"
+        req =  request.Request(url=url, data=data.encode(),method="POST")
+        req.add_header('Content-Type', 'application/json')
+        resp = request.urlopen(req)
+        return AdministrationUtils.jsonResponse(jsonData)
+    elif "kill" in djangoRequest.POST: #just works on chromecast, google home rejects this order
+        if Status.objects.count():
+            device = Device.objects.latest("id")
+            ip = device.ip_address
+            status = Status.objects.latest('id')
+            app = status.app
+            url = "http://"+ip+":8008/apps/"+app
+            req =  request.Request(url=url,method="DELETE")
+            req.add_header('Content-Type', 'application/json')
+            resp = request.urlopen(req)
+            return AdministrationUtils.jsonResponse({"kill":app})
+
 
 def background_process():
     try:
@@ -45,8 +75,15 @@ def background_process():
                 if not (tempState == "UNKNOWN" and status.state == "LOADING"):
                     status.state = tempState
                 status.volume = storedCast.status.volume_level
-                status.content = mc.status.content_id
+                if hasattr(mc.status,"content_id"):
+                    print("status_CONTENT_ID")
+                    status.content = mc.status.content_id
+                if hasattr(storedCast.status,"status_text"):
+                    print("status_TEXT")
+                    status.status_text = storedCast.status.status_text
                 status.app = storedCast.status.display_name
+                #print(str(storedCast.status))
+                #print(dir(storedCast.status))
                 status.save()
                 #storedCast.socket_client.socket.close()
                 storedCast.socket_client.disconnect()
@@ -55,9 +92,13 @@ def background_process():
                 print(str(e))
                 pass
             #controls player playlist
-            if status.state != "IDLE" and status.state != "PLAYING" and status.state != "PAUSED" and status.state != "LOADING" and status.state != "BUFFERING" and CurrentPlaylist.objects.count():
-                #check if there is an active playlist and if there are tracks
-                print("checking..."+str(status.state))
+            #if (status.state not in WAITING and status.app == PLAYER) or (status.app in APPS and status.state == "PAUSED") and CurrentPlaylist.objects.count():
+            if ((status.state not in WAITING and status.state not in STABLE and status.app == PLAYER) or (status.state in STABLE and status.app != PLAYER) or status.state == "UNKNOWN") and bool(CurrentPlaylist.objects.count()):
+                print("entrando con...")
+                print(str(status.state not in WAITING and status.state not in STABLE and status.app == PLAYER))
+                print(str(status.state in STABLE and status.app != PLAYER))
+                print(str(bool(CurrentPlaylist.objects.count())))
+                print(str(status.state == "UNKNOWN"))
                 currentPlaylist = CurrentPlaylist.objects.latest('id')
                 playlistId = currentPlaylist.playlist_id
                 tracks = Track.objects.filter(playlist_id=playlistId).order_by("id")
@@ -92,9 +133,14 @@ def background_process():
 
                 if found and targetTrack is None:
                     currentPlaylist.delete()
+                    print("background has deleted current playlist")
                 if targetTrack is not None:
                     playUrl(targetTrack,format)
-
+            else:
+                print(str(status.state not in WAITING and status.state not in STABLE and status.app == PLAYER))
+                print(str(status.state in STABLE and status.app != PLAYER))
+                print(str(bool(CurrentPlaylist.objects.count())))
+                print(str(status.state == "UNKNOWN"))
             time.sleep(REQUESTED_TIME-REFRESH_TIME) #should be exactly time requested
     except Exception as e:
         settings.RUN = False
@@ -178,6 +224,7 @@ def playlist(request):
                 obtainedId = request.POST.get("id")
                 if CurrentPlaylist.objects.count():
                     CurrentPlaylist.objects.latest('id').delete()
+                    print("select has deleted current playlist")
                 currentPlaylist = CurrentPlaylist()
                 currentPlaylist.device = Device.objects.latest('id').id
                 playlist = Playlist.objects.get(id=obtainedId)
@@ -285,6 +332,7 @@ def play(request):
         currentPlaylist.current_track = track
         currentPlaylist.save()
         format = track.type
+        pause(request)
         playUrl(track,format)
     return AdministrationUtils.httpResponse(json.dumps(data))
 
@@ -337,11 +385,12 @@ def stop(request):
     mc.stop()
     if CurrentPlaylist.objects.count():
         CurrentPlaylist.objects.latest('id').delete()
+        print("stop has deleted current playlist!")
     if Status.objects.count() == 0:
         status = Status()
     else:
         status = Status.objects.latest('id')
-    status.state = "UNKNOWN" #stopped
+    status.state = "STOPPED" #stopped
     status.save()
     data = {}
     data["stop"] = "true"
@@ -395,16 +444,24 @@ def track(request):
 
     if CurrentPlaylist.objects.count():
         currentPlaylist = CurrentPlaylist.objects.latest("id")
-        if storedStatus.app == "Spotify": #spotify app has the control
+        #if (storedStatus.app != PLAYER and storedStatus.state in WAITING): #apps has the control
+        if (storedStatus.state not in WAITING and storedStatus.state not in STABLE and storedStatus.app != PLAYER):
+            #or (status.state in STABLE and status.app != PLAYER) or status.state == "UNKNOWN") and
+            #bool(CurrentPlaylist.objects.count()) :
+
             currentPlaylist.delete()
+            print("track has deleted current playlist: "+storedStatus.state)
         else: #you have the control
             track = currentPlaylist.current_track
             if track is not None:
                 status["track_name"] = track.name
                 status["track_id"] = track.id
                 status["track_url"] = track.original_url
-    elif storedStatus.app == "Spotify":
+    elif storedStatus.app == "Spotify" and "spotify:" in storedStatus.content:
         status["track_name"] = Spotify.getMetadata(storedStatus.content)
+    elif storedStatus.app is not None and storedStatus.app in APPS:
+        status["track_name"] = storedStatus.content
+        status["track_text"] = storedStatus.status_text
 
     return AdministrationUtils.jsonResponse(status)
 

@@ -14,4 +14,5 @@ urlpatterns = [
     url('^seek/', views.seek, name='seek'),
     url('^track/', views.track, name='track'),
     url('^playlist/', views.playlist, name='playlist'),
+    url('^control/', views.control, name='playlist'),
 ]

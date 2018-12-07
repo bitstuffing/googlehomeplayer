@@ -44,3 +44,4 @@ class Status(models.Model):
     content = models.TextField(default="UNKNOWN",null=True)
     app = models.CharField(max_length=20,default="UNKNNOWN",null=True)
     updated = models.DateTimeField(auto_now=True)
+    status_text = models.CharField(max_length=40,default="UNKNOWN",null=True)
