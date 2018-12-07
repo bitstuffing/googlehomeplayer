@@ -12,7 +12,8 @@ function refresh(){
       if (hiddenValue == r.id){
         classes += 'active';
       }
-      var element = '<li id="playlist_track_'+r.id+'" class="'+classes+'">'+r.name+hidden+'</li>';
+      var span = '<span onclick="selectTrack(\''+r.id+'\')" ontouchend="selectTrack(\''+r.id+'\')" style="cursor:pointer;">'+r.name+'</span>';
+      var element = '<li id="playlist_track_'+r.id+'" class="'+classes+'">'+span+hidden+'</li>';
       $("#currentPlaylist").append(element);
     });
   });
@@ -47,6 +48,12 @@ function refresh(){
     $("#progressBar").width(percent);
   });
   setTimeout("refresh()",1000);
+}
+
+function selectTrack(id){
+  $.post("/play/",{"selected":id},function(response){
+    $("#status").text("Selected!");
+  });
 }
 
 function deletePlaylist(id){

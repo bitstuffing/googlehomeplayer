@@ -97,39 +97,44 @@ def background_process():
                 if found and finalUrl is None:
                     currentPlaylist.delete()
 
-                audio = False
-                if format == "audio":
-                    audio = True
+                playUrl(track,format)
 
-                cast = getStoredCast()
-                if finalUrl is not None:
-                    print("trying to play: "+finalUrl)
-                    if ("youtube." in finalUrl or "youtu." in finalUrl ) and not audio:
-                        print("youtube app...")
-                        audio = False
-                        from pychromecast.controllers.youtube import YouTubeController
-                        yt = YouTubeController()
-                        cast.register_handler(yt)
-                        finalUrl = finalUrl[finalUrl.rfind("=")+1:]
-                        yt.play_video(finalUrl)
-                    else:
-                        print("decoder part...")
-                        mc = cast.media_controller
-                        try:
-                            playerUrl = Decoder.decodeUrl(targetTrack,audio)
-                            print("decoder has returned: "+playerUrl)
-                            decoded = playerUrl
-                        except Exception as ex:
-                            print(str(ex))
-                            playerUrl = finalUrl
-                            pass
-                        mc.play_media(playerUrl,format)
             time.sleep(REQUESTED_TIME-REFRESH_TIME) #should be exactly time requested
     except Exception as e:
         settings.RUN = False
         print("Ex:",e)
         pass
     print("background has finished")
+
+def playUrl(track,format):
+    finalUrl = track.url
+    audio = False
+    if format == "audio":
+        audio = True
+
+    cast = getStoredCast()
+    if finalUrl is not None:
+        print("trying to play: "+finalUrl)
+        if ("youtube." in finalUrl or "youtu." in finalUrl ) and not audio:
+            print("youtube app...")
+            audio = False
+            from pychromecast.controllers.youtube import YouTubeController
+            yt = YouTubeController()
+            cast.register_handler(yt)
+            finalUrl = finalUrl[finalUrl.rfind("=")+1:]
+            yt.play_video(finalUrl)
+        else:
+            print("decoder part...")
+            mc = cast.media_controller
+            try:
+                playerUrl = Decoder.decodeUrl(targetTrack,audio)
+                print("decoder has returned: "+playerUrl)
+                decoded = playerUrl
+            except Exception as ex:
+                print(str(ex))
+                playerUrl = finalUrl
+                pass
+            mc.play_media(playerUrl,format)
 
 def playlist(request):
     if "id" not in request.POST:
@@ -249,14 +254,23 @@ def get_devices(request):
     return AdministrationUtils.httpResponse(elements)
 
 def play(request):
-    url = request.POST.get("url")
-    finalUrl = base64.b64decode(url).decode("utf-8")
     data = {}
-    data["playing"] = str(finalUrl)
-    isVideo = False
-    if "video" in request.POST and request.POST.get("video") == "true":
-        isVideo = True
-    decode(finalUrl,isVideo)
+    if "selected" not in request.POST:
+        url = request.POST.get("url")
+        finalUrl = base64.b64decode(url).decode("utf-8")
+        data["playing"] = str(finalUrl)
+        isVideo = False
+        if "video" in request.POST and request.POST.get("video") == "true":
+            isVideo = True
+        decode(finalUrl,isVideo)
+    else: #selected other playlist track
+        selected = request.POST.get("selected")
+        track = Track.objects.get(id=selected)
+        currentPlaylist = CurrentPlaylist.objects.latest('id')
+        currentPlaylist.current_track = track
+        currentPlaylist.save()
+        format = track.type
+        playUrl(track,format)
     return AdministrationUtils.httpResponse(json.dumps(data))
 
 def decode(finalUrl,isVideo):
