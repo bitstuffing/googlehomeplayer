@@ -44,7 +44,7 @@ class Decoder():
         return url
 
 class Spotify():
-    
+
     @staticmethod
     def getMetadata(trackId):
         id = trackId
@@ -60,14 +60,23 @@ class Spotify():
 class Youtube():
 
     @staticmethod
+    def getPlaylistMetadata(url,list=False):
+        params = {
+            'socket_timeout': 10,
+        }
+        if list:
+            params["extract_flat"] = True #compat_list
+            params["dumpjson"] = True #compat_list
+        ydl = youtube_dl.YoutubeDL(params)
+        with ydl:
+            result = ydl.extract_info(url,download=False)
+        return result
+
+    @staticmethod
     def decode(track,audio=True):
         try:
             url = track.original_url
-            ydl = youtube_dl.YoutubeDL({
-                'socket_timeout': 10,
-            })
-            with ydl:
-                result = ydl.extract_info(url,download=False)
+            result = Youtube.getPlaylistMetadata(url)
             filesize = 0
             track.creator = result["creator"]
             track.name = result["title"]

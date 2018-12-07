@@ -18,7 +18,7 @@ from player.models import CurrentPlaylist
 from player.models import Playlist
 from player.models import Track
 
-from utils.decoder import Decoder, Spotify
+from utils.decoder import Decoder, Spotify, Youtube
 
 MESSAGE_TYPE = 'type'
 TYPE_PAUSE = "PAUSE"
@@ -61,16 +61,13 @@ def background_process():
                 currentPlaylist = CurrentPlaylist.objects.latest('id')
                 playlistId = currentPlaylist.playlist_id
                 tracks = Track.objects.filter(playlist_id=playlistId).order_by("id")
-                finalUrl = None
                 found = False
                 format = "audio"
                 targetTrack = None
                 for track in tracks:
-                    targetUrl = track.original_url
-                    print("checking: "+targetUrl+", id: "+str(track.id))
+                    print("checking: "+track.original_url+", id: "+str(track.id))
                     if currentPlaylist.current_track_id is None:
                         print("a")
-                        finalUrl = targetUrl
                         targetTrack = track #save track, needed to metadata info
                         format = track.type
                         currentPlaylist.current_track_id = track.id
@@ -83,7 +80,6 @@ def background_process():
                         found = True #indicate next
                     elif found:
                         print("c")
-                        finalUrl = targetUrl
                         targetTrack = track #save track, needed to metadata info
                         format = track.type
                         currentPlaylist.current_track_id = track.id
@@ -94,10 +90,10 @@ def background_process():
                     else:
                         print("d")
 
-                if found and finalUrl is None:
+                if found and targetTrack is None:
                     currentPlaylist.delete()
-
-                playUrl(track,format)
+                if targetTrack is not None:
+                    playUrl(targetTrack,format)
 
             time.sleep(REQUESTED_TIME-REFRESH_TIME) #should be exactly time requested
     except Exception as e:
@@ -127,7 +123,7 @@ def playUrl(track,format):
             print("decoder part...")
             mc = cast.media_controller
             try:
-                playerUrl = Decoder.decodeUrl(targetTrack,audio)
+                playerUrl = Decoder.decodeUrl(track,audio)
                 print("decoder has returned: "+playerUrl)
                 decoded = playerUrl
             except Exception as ex:
@@ -194,6 +190,25 @@ def playlist(request):
                 playlist = Playlist.objects.get(id=obtainedId)
                 playlist.name = title
                 playlist.save()
+            elif action == "import":
+                obtainedUrl = request.POST.get("url")
+                if "youtu" in obtainedUrl and "list" in obtainedUrl:
+                    responseY = Youtube.getPlaylistMetadata(obtainedUrl,list=True)
+                    if "entries" in responseY: #import list
+                        playlist = Playlist()
+                        playlist.name = "Imported playlist"
+                        if "title" in responseY:
+                            playlist.name = responseY["title"]
+                        playlist.save()
+                        for entry in responseY["entries"]:
+                            track = Track()
+                            track.name = entry["title"]
+                            track.original_url = "http://youtube.com/watch?v="+entry["url"]
+                            track.type = "audio" #TODO
+                            track.playlist = playlist
+                            track.save()
+                        response["added"] = len(responseY["entries"])
+                        response["name"] = responseY["title"]
             return AdministrationUtils.jsonResponse(response)
 
 
@@ -384,9 +399,10 @@ def track(request):
             currentPlaylist.delete()
         else: #you have the control
             track = currentPlaylist.current_track
-            status["track_name"] = track.name
-            status["track_id"] = track.id
-            status["track_url"] = track.original_url
+            if track is not None:
+                status["track_name"] = track.name
+                status["track_id"] = track.id
+                status["track_url"] = track.original_url
     elif storedStatus.app == "Spotify":
         status["track_name"] = Spotify.getMetadata(storedStatus.content)
 

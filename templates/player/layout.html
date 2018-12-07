@@ -10,8 +10,11 @@
 		<div class="page-header " >
 			{% include "player/player.html" %}
 		</div>
-		<div class="page-header " >
+		<div id="playlistFormDiv" class="page-header " >
 			{% include "player/playlist_form.html" %}
+		</div>
+		<div id="importPlaylistFormDiv" class="page-header d-none" >
+			{% include "player/playlist_import_form.html" %}
 		</div>
 		<div class="container" >
 			{% include "player/playlist.html" %}

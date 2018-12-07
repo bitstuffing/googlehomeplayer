@@ -89,6 +89,13 @@ function selectPlaylist(id){
 
 $(document).ready(function(){
 
+  $("#buttonImportPlaylist").on("touched click",function(){
+    var url = $("#inputPlaylist").val();
+    $.post("/playlist/",{"url":url,"action":"import","id":"none"},function(response){
+      $("#playlistLink").trigger("click");
+    });
+  });
+
   $(".nav-link").on("touched click",function(e){
     $(".active").removeClass("active")
     $(this).parent().addClass("active");
@@ -97,9 +104,13 @@ $(document).ready(function(){
     if(selected == 'currentPlaylistLink'){
       $("#rowPlaylist").addClass("d-none");
       $("#rowCurrentPlaylist").removeClass("d-none");
+      $("#playlistFormDiv").removeClass("d-none");
+      $("#importPlaylistFormDiv").addClass("d-none");
     }else if (selected == 'playlistLink'){
       $("#rowPlaylist").removeClass("d-none");
       $("#rowCurrentPlaylist").addClass("d-none");
+      $("#playlistFormDiv").addClass("d-none");
+      $("#importPlaylistFormDiv").removeClass("d-none");
       $("#playlistList").children().remove();
       $.post("/playlist/",{"id":"all"},function(response){
         var res = $.parseJSON(response);
