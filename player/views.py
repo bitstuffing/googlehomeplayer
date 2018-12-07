@@ -365,7 +365,7 @@ def track(request):
 
     storedStatus = Status.objects.latest('id')
     status = {}
-    if storedStatus.state == "PLAYING" or storedStatus.state == "PAUSED":
+    if storedStatus.state == "PLAYING":
         current = storedStatus.updated.timestamp()
         now = datetime.now().timestamp()
         difference = now - current
