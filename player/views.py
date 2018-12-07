@@ -28,7 +28,7 @@ REFRESH_TIME = 0.5
 REQUESTED_TIME = 1
 
 WAITING = ["IDLE","LOADING","BUFFERING"]
-APPS = ["Spotify","TuneIn Free","Relaxing Sounds","Google News"] #"Default Media Receiver"
+APPS = ["Spotify","TuneIn Free","Relaxing Sounds","Google News","Google Podcasts"]
 PLAYER = "Default Media Receiver"
 STABLE = ["PLAYING", "PAUSED"] #UNKNOWN #"STOPPED"
 
