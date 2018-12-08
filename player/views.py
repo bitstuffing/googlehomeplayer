@@ -30,7 +30,7 @@ REQUESTED_TIME = 1
 WAITING = ["IDLE","LOADING","BUFFERING"]
 APPS = ["Spotify","TuneIn Free","Relaxing Sounds","Google News","Google Podcasts"]
 PLAYER = "Default Media Receiver"
-STABLE = ["PLAYING", "PAUSED"] #UNKNOWN #"STOPPED"
+STABLE = ["PLAYING", "PAUSED", "STOPPED", "UNKNOWN"] #UNKNOWN #"STOPPED"
 
 def control(djangoRequest):
     if "reboot" in djangoRequest.POST:
@@ -442,10 +442,12 @@ def track(request):
     status["content"] = storedStatus.content
     status["app"] = storedStatus.app
 
+    print(str(status))
+
     if CurrentPlaylist.objects.count():
         currentPlaylist = CurrentPlaylist.objects.latest("id")
         #if (storedStatus.app != PLAYER and storedStatus.state in WAITING): #apps has the control
-        if (storedStatus.state not in WAITING and storedStatus.state not in STABLE and storedStatus.app != PLAYER):
+        if (currentPlaylist.current_track is not None and (storedStatus.app is None or storedStatus.app in APPS) and (storedStatus.state == "UNKNOWN" or storedStatus.state == "IDLE")) or (storedStatus.state not in WAITING and storedStatus.state not in STABLE and storedStatus.app != PLAYER):
             #or (status.state in STABLE and status.app != PLAYER) or status.state == "UNKNOWN") and
             #bool(CurrentPlaylist.objects.count()) :
 
