@@ -1,6 +1,5 @@
 function refresh(){
   //console.log("refreshing...")
-
   $.getJSON("/playlist/",function(response){
     $("#currentPlaylist").children().remove();
     if($("#hiddenSelectedTrack").length > 0){
@@ -26,7 +25,6 @@ function refresh(){
     if(total > 0){
       percent = Math.floor(parseFloat(time / total) * 100)
     }
-    //console.log(time)
     minutes = parseInt(time/60);
     if(minutes > 60){
       //TODO with config
@@ -38,12 +36,16 @@ function refresh(){
     if(r.track_name != undefined){
       var trackName = "";
       if(r.track_text != undefined){
-        trackName = r.track_text+" - ";
+        trackName = r.track_text;
       }
-      trackName += r.track_name;
+      if(r.track_name.includes("{") || r.track_name.includes("://")){
+        $("#status").text("Info: "+r.track_name);
+      }else{
+        if(trackName.length!=0)
+          trackName += " - ";
+        trackName += r.track_name;
+      }
       $("#trackName").text(trackName);
-      //$("[id^='playlist_track_']").not("#playlist_track_"+r.track_id).removeClass("active");
-      //$("#playlist_track_"+r.track_id).addClass("active");
       if(r.track_id != undefined){
         $("#hiddenSelectedTrack").remove();
         $("body").append("<input type='hidden' id='hiddenSelectedTrack' value='"+r.track_id+"' >");
@@ -53,7 +55,6 @@ function refresh(){
     }
     $("#trackTime").text(minutes+":"+seconds);
     percent = percent+"%";
-    //console.log(percent)
     $("#progressBar").width(percent);
   });
   setTimeout("refresh()",1000);
