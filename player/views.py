@@ -444,7 +444,10 @@ def track(request):
 
         if CurrentPlaylist.objects.count():
             currentPlaylist = CurrentPlaylist.objects.latest("id")
-            print("STORED APP IS: "+str(status["app"]))
+            try:
+                print("STORED APP IS: "+str(status["app"]))
+            except:
+                pass
             if storedStatus.app !=None and storedStatus.state != "IDLE" and storedStatus.state != "BUFFERING" and ((currentPlaylist.current_track is not None and (storedStatus.app is None or storedStatus.app in APPS) and (storedStatus.state == "UNKNOWN" or storedStatus.state == "IDLE")) or (storedStatus.state not in WAITING and storedStatus.state not in STABLE and storedStatus.app != PLAYER)): #apps have the control
                 currentPlaylist.delete()
                 print("track has deleted current playlist: "+storedStatus.state)
