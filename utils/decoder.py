@@ -78,7 +78,7 @@ class Youtube():
             url = track.original_url
             result = Youtube.getPlaylistMetadata(url)
             filesize = 0
-            track.creator = result["creator"]
+            #track.creator = result["creator"]
             track.name = result["title"]
             track.thumbnail = result["thumbnail"]
             track.description = result["description"]

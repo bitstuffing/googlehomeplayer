@@ -3,7 +3,8 @@ from django.shortcuts import render
 from django.conf import settings
 
 import pychromecast
-from pychromecast import Chromecast, DeviceStatus, CAST_TYPES, CAST_TYPE_CHROMECAST
+from pychromecast import Chromecast, CAST_TYPE_CHROMECAST
+from pychromecast.dial import DeviceStatus
 import json
 import base64
 import time
@@ -157,7 +158,10 @@ def playUrl(track,format):
             yt = YouTubeController()
             cast.register_handler(yt)
             finalUrl = finalUrl[finalUrl.rfind("=")+1:]
-            yt.play_video(finalUrl)
+            try:
+                yt.play_video(finalUrl)
+            except:
+                cast.disconnect()
         else:
             mc = cast.media_controller
             try:
@@ -167,6 +171,7 @@ def playUrl(track,format):
                 print(str(ex))
                 playerUrl = finalUrl
                 pass
+            print("trying to play %s" % (playerUrl))
             mc.play_media(playerUrl,format)
             mc.block_until_active()
             mc.play()
@@ -293,15 +298,15 @@ def index(request):
 
 def select_device(request,target):
     chromecasts = pychromecast.get_chromecasts()
-    cast = next(cc for cc in chromecasts if cc.device.friendly_name == target)
+    cast = next(cc for cc in chromecasts[0] if cc.name == target)
     cast.wait()
     Device.objects.all().delete()
     device = Device()
-    device.ip_address = cast.host
-    device.port = cast.port
+    device.ip_address = cast.cast_info.host
+    device.port = cast.cast_info.port
     device.friendly_name = target
-    device.model_name = cast.model_name
-    device.uuid = str(cast.uuid)
+    device.model_name = cast.cast_info.model_name
+    device.uuid = str(cast.cast_info.uuid)
     device.save()
     data = {}
     data["target"] = target
@@ -311,8 +316,8 @@ def select_device(request,target):
 def get_devices(request):
     chromecasts = pychromecast.get_chromecasts()
     devices = []
-    for cc in chromecasts:
-        devices.append(cc.device.friendly_name)
+    for cc in chromecasts[0]:
+        devices.append(cc.name)
     elements = json.dumps(devices)
     return AdministrationUtils.httpResponse(elements)
 
@@ -426,9 +431,9 @@ def volume(request):
     return AdministrationUtils.httpResponse(str(cast))
 
 def track(request):
+    status = {}
     try:
         storedStatus = Status.objects.latest('id')
-        status = {}
         if storedStatus.state == "PLAYING":
             current = storedStatus.updated.timestamp()
             now = datetime.now().timestamp()
@@ -466,6 +471,7 @@ def track(request):
     except Exception as e:
         print("error")
         pass
+    return AdministrationUtils.jsonResponse(status)
 
 def getStoredCast(request = None):
     if request is not None:
@@ -482,11 +488,6 @@ def getStoredCast(request = None):
     uuid = device.uuid
     ip_address = device.ip_address
     port = device.port
-    #cast_type = CAST_TYPES.get(model_name.lower(), CAST_TYPE_CHROMECAST)
-    #device = DeviceStatus(
-    #    friendly_name=friendly_name, model_name=model_name,
-    #    manufacturer=None, uuid=uuid, cast_type=cast_type
-    #)
-    cast = pychromecast.Chromecast(ip_address)
-    cast.wait();
-    return cast
+    chromecast = pychromecast.get_chromecast_from_host((ip_address, int(port), uuid, model_name, friendly_name))
+    chromecast.wait();
+    return chromecast

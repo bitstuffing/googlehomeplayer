@@ -1,18 +1,18 @@
 from django.urls import path
-from django.conf.urls import url
+from django.urls import include, re_path
 
 from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
     path('devices/', views.get_devices, name='get_devices'),
-    url('^device/(.*)/$', views.select_device, name='select_device'),
-    url('^play/', views.play, name='play'),
-    url('^stop/', views.stop, name='stop'),
-    url('^pause/', views.pause, name='pause'),
-    url('^volume/', views.volume, name='volume'),
-    url('^seek/', views.seek, name='seek'),
-    url('^track/', views.track, name='track'),
-    url('^playlist/', views.playlist, name='playlist'),
-    url('^control/', views.control, name='playlist'),
+    re_path('^device/(.*)/$', views.select_device, name='select_device'),
+    re_path('^play/', views.play, name='play'),
+    re_path('^stop/', views.stop, name='stop'),
+    re_path('^pause/', views.pause, name='pause'),
+    re_path('^volume/', views.volume, name='volume'),
+    re_path('^seek/', views.seek, name='seek'),
+    re_path('^track/', views.track, name='track'),
+    re_path('^playlist/', views.playlist, name='playlist'),
+    re_path('^control/', views.control, name='playlist'),
 ]

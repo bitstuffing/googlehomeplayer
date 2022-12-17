@@ -1,8 +1,9 @@
 # googlehomeplayer
-This is a django web project to send music and generate a playlist for Google Home speakers with a simple and useful browser (your mobile have one)
+This is an old django web project to send music and generate a playlist for Google Home speakers with a simple and useful browser (your mobile have one).
 
-Now it's working with static content, it's just a prove of concept. But this project will evolve
-Google is breaking functionalities, so, probably one day it will not work anymore, sorry, is Google.
+Just I have improve 3 years of forgotten project, migrate it to last django and I made some fixes related to new commits on pychromecast library (to new people).
+
+In the past it was working with static content, it's just a prove of concept. But this project will evolve Google is breaking functionalities, so, probably one day it will not work anymore, sorry, is Google.
 
 This project is based on django, so if you want to run this project simply:
 
@@ -14,14 +15,28 @@ Open your favorite browser (please, use Firefox, it's your biggest friend!)
 
 To install dependencies use pip:
 
+`sudo pip3 install -r requirements.txt`
+
+or do a manually instalation:
+
 `sudo pip3 install django youtube_dl pychromecast`
 
-Probably you'll need upgrade youtube_dl and pychromecast, so try with pip install --upgrade PACKAGE
+With the past of years probably you'll need upgrade youtube_dl and pychromecast, so try with pip install --upgrade PACKAGE
 
-First time, like any other django app needs some `synchronization` with internal model, to make it simply launch:
+First time, like any other django app needs some `synchronization` with internal model (at least when it was developed at first time, and contains those scripts), to make it simply launch:
+
+Generates migrations (model):
 
 `python3 manage.py makemigrations`
 
+Migrate (sqlite):
+
 `python3 manage.py migrate`
 
-This proyect probably will be growing supporting more pages and functionalities, but you can just tests current functionalities working fine.
+I'm not very sure if this project will be growing, probably I just do other project instead of re-work it, but if you want you could try launching a petition or opening issues or request support for more pages and functionalities. Anyway, you can tests current functionalities working fine.
+
+Now I migrate 4 years and just test radio and youtube with an old first revision working chromecast (incredible, today is 2022!).
+
+This project was released by @bitstuffing with love in 2018, and his license is GPLv3.
+
+Enjoy!
