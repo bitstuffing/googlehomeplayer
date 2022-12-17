@@ -1,0 +1,3 @@
+django
+youtube_dl
+pychromecast
