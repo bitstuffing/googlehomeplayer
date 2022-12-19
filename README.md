@@ -1,7 +1,7 @@
 # googlehomeplayer
 This is an old django web project to send music and generate a playlist for Google Home speakers with a simple and useful browser (your mobile have one).
 
-Just I have improve 3 years of forgotten project, migrate it to last django and I made some fixes related to new commits on pychromecast library (to new people).
+Just I have improved 3 years of this forgotten project, I've migrated it to last django version and I've made some fixes related to new commits on pychromecast library (to new people). But nothing incredible, just the easiest fixes to get it working today with lastest dependencies.
 
 In the past it was working with static content, it's just a prove of concept. But this project will evolve Google is breaking functionalities, so, probably one day it will not work anymore, sorry, is Google.
 
